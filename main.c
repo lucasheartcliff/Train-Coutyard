@@ -4,22 +4,34 @@
 
 typedef struct wagon{
     int destiny;
-    struct wagon *next;    
+    struct wagon *next;
+    struct wagon *back;
 }wagon;
 
 typedef struct{
     wagon *wagons;
     wagon *header;
     int lenght;
+    int smaller;
 }train;
 
 typedef struct{
-    int size;
+    int quantity;
     wagon *wagons;
     wagon *header;
+}rail;
+
+typedef struct{
+    rail *rails;
+    int num_rails;
+    int size;
 }coutyard;
 
-train* new_train(int lenght){
+void memoryOverFlow(){
+    printf("Memoria Cheia");
+}
+
+train* newTrain(int lenght){
     train* tr = (train*) malloc( sizeof(train) );
     tr->wagons = (wagon*) malloc( lenght * sizeof(wagon));
     tr->header = (wagon*) malloc( sizeof(wagon) );
@@ -29,30 +41,43 @@ train* new_train(int lenght){
         free(tr);
         return NULL;
     }else{
+        tr->lenght = lenght;
         return tr;
     }
 }
 
-coutyard* new_coutyard(int lenght, int size){
-    coutyard* ct = (coutyard*) malloc(lenght * sizeof(coutyard));
+coutyard* newCoutyard(int lenght, int size){
+    coutyard* ct = (coutyard*) malloc(sizeof(coutyard));
     
     if(ct == NULL){
         memoryOverFlow();
         free(ct);
         return NULL;
     }else{
-        int i;
+        ct->rails = (rail*) malloc( lenght * sizeof(rail));
 
-        for(i=0;i<lenght;i++){
-            ct[i].wagons = (wagon*) malloc(size * sizeof(wagon));
+        if(ct->rails == NULL){
+            memoryOverFlow();
+            free(ct);
+            return NULL;
+        }else{
+            int i;
 
-            if(ct[i].wagons == NULL){
-                memoryOverFlow();
-                free(ct);
-                return NULL;
+            for(i=0;i<lenght;i++){
+                ct->rails[i].wagons = (wagon*) malloc(size * sizeof(wagon));
+
+                if(ct->rails[i].wagons == NULL){
+                    memoryOverFlow();
+                    free(ct);
+                    return NULL;
+                }else{
+                    ct->rails[i].quantity = 0;
+                }
             }
+            ct->size = size;
+            ct->num_rails = lenght;
+            return ct;
         }
-        return ct;
     }
 }
 void isPossible(int wagons, int *lenght, int *size){
@@ -65,10 +90,39 @@ void isPossible(int wagons, int *lenght, int *size){
         */
         
         *lenght = (int) ceil( sqrt(wagons - 1) );
-        *size = (int) ceil( sqrt(wagons -1) );
+        *size = (int) ceil( sqrt(wagons - 1) );
     }
 }
 
+int removeStack(rail *rl){
+    if(rl->quantity > 0){
+        wagon *this = rl->header->next;
+        int value = this->destiny;
+
+        rl->header->next = this->next;
+
+        free(this);
+        return value;
+    }
+}
+
+int removeQueue(train *tr){
+    if(tr->lenght > 0){
+        wagon *this = tr->header->next;
+        int value = tr->header->next->destiny;
+        
+        tr->header->next = this->next;
+
+        free(this);
+        return value;
+    }else{
+        return NULL;
+    }
+}
+
+void insertQueue(){
+
+}
 int main(void){
 
     return 0;
