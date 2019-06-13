@@ -80,17 +80,34 @@ coutyard* newCoutyard(int lenght, int size){
         }
     }
 }
-void isPossible(int wagons, int *lenght, int *size){
-    int result = (*lenght)*(*size);
+void isPossible(train *tr, int *lenght, int *size){
+    wagon *pw = tr->header->next;
+    int count = 0;
 
-    if(result < (wagons -1) ){
-        /*
-        *   ceil() retorna o maior valor aproximado do parâmetro passado, exemplo: 12.4 -> 13.0
-        *   sqrt() retorna a raiz quadrada do parâmetro
-        */
-        
-        *lenght = (int) ceil( sqrt(wagons - 1) );
-        *size = (int) ceil( sqrt(wagons - 1) );
+    while(pw != tr->header){
+        if(pw->destiny == pw->back->destiny + 1 && pw->destiny != tr->smaller){
+            count++;
+        }
+        pw = pw->next;
+    }
+
+    //* ceil() retorna o maior valor aproximado do parâmetro passado, exemplo: 12.1 -> 13.0
+    //* sqrt() retorna a raiz quadrada do parâmetro
+
+    if(count > 0){
+        //? Determina a quantidade de trilhos e sua quantidade, no caso de sequencia
+        //* tr->lenght é a quantidade de vagões presentes no trem
+
+        *lenght = (int) ceil( count + sqrt(tr->lenght) );
+        *size = (int) ceil( *lenght / (tr->lenght - count) );
+    }else{
+        //? Determina o mínimo de trilhos que serão para que possa ser executado
+        int result = (*lenght)*(*size);
+
+        if(result < tr->lenght ){
+            *lenght = (int) ceil( sqrt(tr->lenght) );
+            *size = (int) ceil( sqrt(tr->lenght) );
+        }
     }
 }
 
