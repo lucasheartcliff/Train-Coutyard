@@ -126,7 +126,7 @@ coutyard* newCoutyard(int lenght, int size){
 //* Verifica se o próximo vagão ja pode ser inserido direto no trem de saída
 int canGo(int *this, int *nextToGo){
     if(*this == *nextToGo){
-        *nextToGo++;
+        *nextToGo += 1;
         return 1;
     }else{
         return 0;
@@ -159,7 +159,7 @@ void howMany(train *tr, int *lenght, int *size){
                 count = 1;
             }
         }
-        //printf("trilho: %i | tamanho: %i | contador: %i\n", *lenght, *size, count);
+        //printf("trilho: %i | tamanho: %i | contador: %i | proximo a ir: %i\n", *lenght, *size, count, tr->nextToGo);
         pw = pw->next;
     }
 }
@@ -176,6 +176,8 @@ wagon* removeStack(rail *rl){
         rl->quantity--;
 
         return this;
+    }else{
+        return NULL;
     }
 }
 
@@ -235,14 +237,14 @@ void insertStack(rail *rl , wagon *wg){
 
 //* Entrada da sequencia dos vagões
 void entry(train *tr){
-    int value = 0; //? Irá conter os valores da hierarquia
+    int value = 1; //? Irá conter os valores da hierarquia
     int count = 0; //? Contador de Vagões
 
-    while(value >= 0){
+    while(value > 0){
         printf("Digite a hierarquia do %i vagao: ", (count+1) );
         scanf("%i",&value);
 
-        if(value >= 0){
+        if(value > 0){
             insertQueue(tr, newWagon(value)); //? Insere vagão criado no trem
 
             if(tr->nextToGo > value || count == 0){ //? Verifica se o valor atual é menor do que os anteriores
@@ -262,6 +264,22 @@ void echoTrain(train *tr){
     }
 }
 
+void echoRail(rail *rl){
+    rail *pr = rl->next;
+    wagon *pw = pr->header->next;
+
+
+    while(pr != rl){
+        while(pw != NULL){
+            printf("%i ",pw->destiny);
+            pw = pw->next;
+        }
+        pr = pr->next;
+        pw = pr->header->next;
+        printf("\n");
+    }
+}
+
 train* startSwap(train *tr, coutyard *ct){
     train *tr_out = newTrain(); //? Trem de saída
 
@@ -273,62 +291,58 @@ train* startSwap(train *tr, coutyard *ct){
 
     int found; //? Indicador se achou um espaço livre no trilho
 
-    int num_rail;
+    int num_rail; //? Identificador de posição do vagão no trilho
 
-    while(tr->lenght >0){
+    while(tr->lenght > 0){
         pr = ct->rails->next;
         num_rail = 1;
-        printf("\nPróximo a ir %i\n", tr->nextToGo);
 
-        if(tr->lenght > 0){
-            wg = removeQueue(tr);
-            found = 0;
+        wg = removeQueue(tr);
+        found = 0;
 
-            if( !canGo(&wg->destiny, &tr->nextToGo) ){
-                while(pr != ct->rails && found == 0){
-                    if(pr->quantity > 0){
-                        if(pr->header->next->destiny > wg->destiny && pr->quantity < ct->size){
-                            insertStack(pr, wg);
-                            found = 1;
-
-                            printf("Vagão %i saiu do Trem Trilho %i - %i° Posição\n",wg->destiny, num_rail, pr->quantity);
-                        }else{
-                            pr = pr->next;
-                            num_rail++;
-                        }
-                    }else{
-                        insertStack(pr,wg);
+        if( !(wg->destiny == tr->nextToGo ) ){
+             while(pr != ct->rails && found == 0){
+                if(pr->quantity > 0){
+                    if(pr->header->next->destiny > wg->destiny && pr->quantity < ct->size){
+                        insertStack(pr, wg);
                         found = 1;
-
                         printf("Vagão %i saiu do Trem para o Trilho %i - %i° Posição\n",wg->destiny, num_rail, pr->quantity);
-                    }
-                }
-            }else{
-                insertQueue(tr_out,wg);
-
-                 while(pr != ct->rails){
-                    if( canGo( &pr->header->next->destiny, &tr->nextToGo ) ){
-                        wg = removeStack(pr);
-                        insertQueue(tr_out, wg);
-                        printf("Vagão %i saiu do Trilho %i para o Trem de saída\n",wg->destiny, num_rail);
                     }else{
                         pr = pr->next;
+                        num_rail++;
                     }
+                }else{
+                     insertStack(pr,wg);
+                     found = 1;
+                     printf("Vagão %i saiu do Trem para o Trilho %i - %i° Posição\n",wg->destiny, num_rail, pr->quantity);
                 }
             }
         }else{
-            printf("Aqui");
-            while(pr != ct->rails){
-                if( canGo( &pr->header->next->destiny, &tr->nextToGo ) ){
-                    wg = removeStack(pr);
-                    insertQueue(tr_out, wg);
-                    printf("Vagão %i saiu do Trilho %i para o Trem de saída\n",wg->destiny, num_rail);
-                }else{
-                    pr = pr->next;
-                }
+            if( canGo(&wg->destiny, &tr->nextToGo)){
+                insertQueue(tr_out, wg);
+            }
+        }
+
+    }
+    //echoRail(ct->rails);
+    printf("\n");
+    while(tr_out->lenght < max_wagon){
+        pr = ct->rails->next; //? Aponta o ponteiro para o 1° trilho
+        num_rail = 1;
+
+        while(pr != ct->rails){
+            if( pr->quantity > 0 && canGo( &pr->header->next->destiny , &tr->nextToGo)){
+                wg = removeStack(pr);
+                insertQueue(tr_out, wg);
+                printf("Vagão %i do Trilho %i - Posição %i -> Trem de Saída\n",wg->destiny, num_rail, (pr->quantity+1) );
+            }else{
+                pr = pr->next;
+                num_rail++;
             }
         }
     }
+
+    //echoTrain(tr_out);
     return tr_out;
 }
 
@@ -344,10 +358,8 @@ int main(void){
 
     coutyard *ct = newCoutyard(lenght, size);
 
-    printf("%i",tr->lenght);
-    system("pause");
     tr = startSwap(tr, ct);
 
-    //echoTrain(tr);
+    echoTrain(tr);
     return 0;
 }
