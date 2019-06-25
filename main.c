@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <locale.h>
 
-//* Defina a hierarquia dos vagões de entrada
-//?
-//!
+//* Define o propósito das funções e estruturas
+//? Explicita o significado das variaveis
 
 //* Estrutura do Vagão
 typedef struct wagon{
@@ -38,6 +37,56 @@ typedef struct{
 //* Cria um novo vagão
 wagon* newWagon(int value);
 
+//* Cria um novo trem
+train* newTrain();
+
+//* Insere vagão no trem
+void insertQueue(train *tr, wagon *wg);
+
+//* Remove vagão do trem
+wagon* removeQueue(train *tr);
+
+//* Cria um novo trilho
+rail* newRail();
+
+//* Insere um trilho à um pátio
+void insertRail(coutyard *ct, rail * rl);
+
+//* Insere vagão no trilho
+void insertStack(rail *rl , wagon *wg);
+
+//* Remove vagão da pilha de trilhos
+wagon* removeStack(rail *rl);
+
+//* Cria um novo pátio
+coutyard* newCoutyard(int lenght, int size);
+
+//* Verifica se o próximo vagão ja pode ser inserido direto no trem de saída
+int canGo(int *this, int *nextToGo);
+
+//* Verifica a sequencia e determina a quantidade mínima de trilhos necessária para a reorganização
+void howMany(train *tr, int *lenght, int *size);
+
+//* Entrada da sequencia dos vagões
+void entry(train *tr);
+
+//* Exibe os valores do trem na tela
+void echoTrain(train *tr);
+
+//* Exibe os valores da pilha na tela
+void echoRail(rail *rl);
+
+//* Realiza a reorganização dos vagões
+train* startSwap(train *tr, coutyard *ct);
+
+//* Memória Indisponível
+void memoryOverFlow();
+
+
+
+
+
+//* Memória Indisponível
 void memoryOverFlow(){
     printf("Memoria Cheia");
 }
@@ -86,6 +135,7 @@ rail* newRail(){
     }
 }
 
+//* Insere um trilho à um pátio
 void insertRail(coutyard *ct, rail * rl){
     if(ct != NULL && rl != NULL){
         if(ct->lenght == 0){
@@ -163,6 +213,7 @@ void howMany(train *tr, int *lenght, int *size){
         pw = pw->next;
     }
 }
+
 //* Remove vagão da pilha de trilhos
 wagon* removeStack(rail *rl){
     if(rl != NULL && rl->quantity > 0){
@@ -240,8 +291,9 @@ void entry(train *tr){
     int value = 1; //? Irá conter os valores da hierarquia
     int count = 0; //? Contador de Vagões
 
+    printf("Digite a ordem dos vagões\n\nObs: Digite qualquer n° negativo para indicar o fim da sequência.\n\n");
     while(value > 0){
-        printf("Digite a hierarquia do %i vagao: ", (count+1) );
+        printf("%i° Vagão: ", (count+1) );
         scanf("%i",&value);
 
         if(value > 0){
@@ -255,15 +307,19 @@ void entry(train *tr){
     }
 }
 
+//* Exibe os valores do trem na tela
 void echoTrain(train *tr){
     wagon *pw = tr->header->next;
-
+    int count = 0;
+    printf("Destino\tPosição\t\n");
     while(pw != tr->header){
-        printf("%i\n", pw->destiny);
+        count++;
+        printf("%i\t%i°\t\n", pw->destiny,count);
         pw = pw->next;
     }
 }
 
+//* Exibe os valores da pilha na tela
 void echoRail(rail *rl){
     rail *pr = rl->next;
     wagon *pw = pr->header->next;
@@ -280,6 +336,7 @@ void echoRail(rail *rl){
     }
 }
 
+//* Realiza a reorganização dos vagões
 train* startSwap(train *tr, coutyard *ct){
     train *tr_out = newTrain(); //? Trem de saída
 
@@ -293,6 +350,11 @@ train* startSwap(train *tr, coutyard *ct){
 
     int num_rail; //? Identificador de posição do vagão no trilho
 
+    int count = 0; //? Contador de etapas
+
+    system("cls");
+    printf("Iniciando troca... \n");
+    printf("\nEtapas\tVagão\tTrilho\tPosição\tEmissor\tDestino\t\n");
     while(tr->lenght > 0){
         pr = ct->rails->next;
         num_rail = 1;
@@ -304,17 +366,19 @@ train* startSwap(train *tr, coutyard *ct){
              while(pr != ct->rails && found == 0){
                 if(pr->quantity > 0){
                     if(pr->header->next->destiny > wg->destiny && pr->quantity < ct->size){
+                        count++;
                         insertStack(pr, wg);
-                        found = 1;
-                        printf("Vagão %i saiu do Trem para o Trilho %i - %i° Posição\n",wg->destiny, num_rail, pr->quantity);
+                        found = 1; //? Se achou espaço livre que atenda as condições muda para 1
+                        printf("%i\t%i\t%i\t%i\tTrem\tTrilho\t\n",count,wg->destiny, num_rail, pr->quantity);
                     }else{
                         pr = pr->next;
                         num_rail++;
                     }
                 }else{
+                     count++;
                      insertStack(pr,wg);
                      found = 1;
-                     printf("Vagão %i saiu do Trem para o Trilho %i - %i° Posição\n",wg->destiny, num_rail, pr->quantity);
+                     printf("%i\t%i\t%i\t%i\tTrem\tTrilho\t\n",count,wg->destiny, num_rail, pr->quantity);
                 }
             }
         }else{
@@ -325,23 +389,23 @@ train* startSwap(train *tr, coutyard *ct){
 
     }
     //echoRail(ct->rails);
-    printf("\n");
     while(tr_out->lenght < max_wagon){
         pr = ct->rails->next; //? Aponta o ponteiro para o 1° trilho
         num_rail = 1;
 
         while(pr != ct->rails){
             if( pr->quantity > 0 && canGo( &pr->header->next->destiny , &tr->nextToGo)){
+                count++;
                 wg = removeStack(pr);
                 insertQueue(tr_out, wg);
-                printf("Vagão %i do Trilho %i - Posição %i -> Trem de Saída\n",wg->destiny, num_rail, (pr->quantity+1) );
+                printf("%i\t%i\t%i\t%i\tTrilho\tTrem\t\n",count,wg->destiny, num_rail, (pr->quantity+1) );
             }else{
                 pr = pr->next;
                 num_rail++;
             }
         }
     }
-
+    printf("\nTrilhos Usados: %i\nQuantidade Máxima de Vagões/Trilho: %i\n\n",ct->lenght,ct->size);
     //echoTrain(tr_out);
     return tr_out;
 }
@@ -349,17 +413,53 @@ train* startSwap(train *tr, coutyard *ct){
 int main(void){
     setlocale(LC_ALL,"Portuguese");
 
-    train *tr = newTrain();
-    int lenght;
-    int size;
+    train *tr = NULL; //? Trem que será reorganizado
+    coutyard *ct = NULL; //? Pátio de Troca de Vagões
+    int lenght; //? Quantidade de Trilhos
+    int size; //? Quantidade de Vagões que cada trilho suporta
+    int input=0; //? Leitura das opções escolhidas pelo usuário
 
-    entry(tr);
-    howMany(tr, &lenght, &size);
+    while(input != 4){
+        system("cls");
+        printf("Escolha uma das opções abaixo\n");
+        printf("1 - Inserir a sequência do trem\n");
+        printf("2 - Reordenar o trem\n");
+        printf("3 - Exibir o trem\n");
+        printf("4 - Sair do Programa\n");
 
-    coutyard *ct = newCoutyard(lenght, size);
+        scanf("%i",&input);
 
-    tr = startSwap(tr, ct);
+        switch(input){
 
-    echoTrain(tr);
+            case 1:
+                system("cls");
+
+                if(tr != NULL){
+                    free(tr); //? Libera caso queira entrar novamento com novos dados
+                }
+                tr = newTrain(); //? Aloca um novo trem
+                entry(tr); //? Entrada de dados
+                howMany(tr, &lenght, &size); //? Determina quantos trilhos serão utilizados
+            break;
+            case 2:
+                if(ct != NULL){
+                    free(ct->rails); //? Libera os trilhos usados anteriormente
+                    free(ct);  //? Libera o pátio usado anteriormente
+                }
+                ct = newCoutyard(lenght, size); //? Aloca um novo pátio
+                tr = startSwap(tr, ct); //? Inicia a troca
+                system("pause");
+            break;
+            case 3:
+                system("cls");
+                echoTrain(tr); //? Exibe a sequencia do trem na tela
+                printf("\n");
+                system("pause");
+            break;
+
+            default:
+            break;
+        }
+    }
     return 0;
 }
